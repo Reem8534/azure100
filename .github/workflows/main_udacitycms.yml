@@ -1,46 +1,71 @@
-# Workflow to ensure whenever a Github PR is submitted, 
-# a JIRA ticket gets created automatically. 
-name: Manual Workflow
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 
-# Controls when the action will run. 
+name: Build and deploy Python app to Azure Web App - udacitycms
+
 on:
-  # Triggers the workflow on pull request events but only for the master branch
-  pull_request_target:
-    types: [opened, reopened]
-
-  # Allows you to run this workflow manually from the Actions tab
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  test-transition-issue:
-    name: Convert Github Issue to Jira Issue
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read #This is required for actions/checkout
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@master
+      - uses: actions/checkout@v4
 
-    - name: Login
-      uses: atlassian/gajira-login@master
-      env:
-        JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-        JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
-        JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      - name: Set up Python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Create and start virtual environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
         
-    - name: Create NEW JIRA ticket
-      id: create
-      uses: atlassian/gajira-create@master
-      with:
-        project: CONUPDATE
-        issuetype: Task
-        summary: |
-          Github PR nd081 - Azure Cloud Developer  | Repo: ${{ github.repository }}  | PR# ${{github.event.number}}
-        description: |
-           Repo link: https://github.com/${{ github.repository }}   
-           PR no. ${{ github.event.pull_request.number }} 
-           PR title: ${{ github.event.pull_request.title }}  
-           PR description: ${{ github.event.pull_request.description }}  
-           In addition, please resolve other issues, if any. 
-        fields: '{"components": [{"name":"nd081 - Azure Cloud Developer"}], "customfield_16449":"https://classroom.udacity.com/", "customfield_16450":"Resolve the PR", "labels": ["github"], "priority":{"id": "4"}}'
+      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
-    - name: Log created issue
-      run: echo "Issue ${{ steps.create.outputs.issue }} was created"
+      - name: Upload artifact for deployment jobs
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-app
+          path: |
+            .
+            !venv/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: python-app
+      
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_6D77D5CD74BE4E2188DCDDD6AF7D0D7F }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_74476D2EEE4B4F0BA129033590B323F1 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C270E212F19046BCA7B959C27218BEEF }}
+
+      - name: 'Deploy to Azure Web App'
+        uses: azure/webapps-deploy@v3
+        id: deploy-to-webapp
+        with:
+          app-name: 'udacitycms'
+          slot-name: 'Production'
+          
