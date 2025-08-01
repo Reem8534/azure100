@@ -14,5 +14,5 @@ if __name__ == '__main__':
     except ValueError:
         PORT = 5555
     # Run with HTTPS using adhoc self-signed cert
-    app.run('0.0.0.0', PORT, ssl_context='adhoc')
+app.run(host='0.0.0.0', port=5555, debug=True)
 
