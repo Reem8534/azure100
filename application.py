@@ -8,10 +8,9 @@ import logging
 
 if __name__ == '__main__':
     app.debug = True
-    HOST = environ.get('SERVER_HOST', '0.0.0.0')  # Accept external connections
+    HOST = environ.get('SERVER_HOST', 'localhost')
     try:
         PORT = int(environ.get('SERVER_PORT', '5555'))
     except ValueError:
         PORT = 5555
-    # Run with HTTPS using adhoc self-signed cert
-    app.run(host=HOST, port=PORT, ssl_context='adhoc', debug=True)
+    app.run(HOST, PORT, ssl_context='adhoc')
