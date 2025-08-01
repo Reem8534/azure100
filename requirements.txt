@@ -19,7 +19,7 @@ Mako==1.1.1
 MarkupSafe==2.0.1
 msal==1.13.0
 pycparser==2.20
-pyodbc==4.0.28
+pyodbc==4.0.34
 pyOpenSSL==19.1.0
 python-dateutil==2.8.1
 python-editor==1.0.4
